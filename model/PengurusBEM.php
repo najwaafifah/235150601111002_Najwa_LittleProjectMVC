@@ -17,7 +17,7 @@ class PengurusBEM
         $angkatan = "",
         $jabatan = "",
         $foto = "",
-        $password = "",
+        $password = ""
     )
     {
         $this->nama = $nama;
@@ -30,26 +30,86 @@ class PengurusBEM
 
     public function fetchAllPengurusBEM()
     {
-        // implementasi fetch all rows with select
+        global $mysqli;
+        $query = "SELECT * FROM pengurus_bem";
+        $result = $mysqli->query($query);
+
+        if ($result) {
+            $pengurusList = $result->fetch_all(MYSQLI_ASSOC);
+            return $pengurusList;
+        }
+        return [];
     }
 
     public function fetchOnePengurusBEM(string $nim)
     {
-        // implementasi fetch one row by nim with select
+        global $mysqli;
+        $query = "SELECT * FROM pengurus_bem WHERE nim = ?";
+        $stmt = $mysqli->prepare($query);
+        $stmt->bind_param("s", $nim);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            return $result->fetch_assoc();
+        }
+        return null;
     }
 
     public function insertPengurusBEM() 
     {
-        $result = $mysqli->query("INSERT INTO pengurus_bem VALUES ('$this->nama', '$this->nim', '$this->angkatan', '$this->jabatan', '$this->foto', '$this->password')");
+        global $mysqli;
+        $query = "INSERT INTO pengurus_bem (nama, nim, angkatan, jabatan, foto, password) VALUES (?, ?, ?, ?, ?, ?)";
+        $stmt = $mysqli->prepare($query);
+        $stmt->bind_param("ssisss", $this->nama, $this->nim, $this->angkatan, $this->jabatan, $this->foto, $this->password);
+        
+        if ($stmt->execute()) {
+            return true;
+        }
+        return false;
     }
 
-    public function updatePengurusBEM()
+    public function updatePengurusBEM(string $nim)
     {
-        // implementasi sql update
+        global $mysqli;
+        $query = "UPDATE pengurus_bem SET nama = ?, angkatan = ?, jabatan = ?, foto = ?, password = ? WHERE nim = ?";
+        $stmt = $mysqli->prepare($query);
+        $stmt->bind_param("sissss", $this->nama, $this->angkatan, $this->jabatan, $this->foto, $this->password, $nim);
+        
+        if ($stmt->execute()) {
+            return true;
+        }
+        return false;
     }
 
-    public function deletePengurusBEM()
+    public function deletePengurusBEM(string $nim)
     {
-        // implementasi sql delete   
+        global $mysqli;
+        $query = "DELETE FROM pengurus_bem WHERE nim = ?";
+        $stmt = $mysqli->prepare($query);
+        $stmt->bind_param("s", $nim);
+        
+        if ($stmt->execute()) {
+            return true;
+        }
+        return false;
+    }
+
+    public function validateLogin($nim, $password)
+    {
+        global $mysqli;
+        
+        // Fetch all pengurus BEM records
+        $pengurusList = $this->fetchAllPengurusBEM();
+        
+        // Loop through the fetched data to find a matching NIM and password
+        foreach ($pengurusList as $pengurus) {
+            // If NIM matches, check if password is correct
+            if ($pengurus['nim'] === $nim && password_verify($password, $pengurus['password'])) {
+                return true; // Valid login
+            }
+        }
+        
+        return false; // Invalid login
     }
 }

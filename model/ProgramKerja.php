@@ -1,12 +1,32 @@
 <?php
 
-require("config/koneksi_mysql.php");
+require("../config/koneksi_mysql.php");
+
+
+if (isset($_GET['action'])) {
+    switch ($_GET['action']) {
+        case 'delete':
+            if (isset($_GET['nomor'])) {
+                $controller->deleteProker();
+            }
+            break;
+        case 'edit':
+            $controller->updateProker();
+            break;
+        default:
+            echo "Invalid action.";
+            break;
+    }
+} else {
+    // echo "No action specified.";
+}
 
 class ProgramKerja 
 {
     private int $nomorProgram;
     private string $nama;
     private string $suratKeterangan;
+
 
     public function createModel(
         $nomorProgram = "",
@@ -21,26 +41,75 @@ class ProgramKerja
 
     public function fetchAllProgramKerja()
     {
-        // implementasi fetch all rows with select
+        global $mysqli;
+        
+            $query = "SELECT * FROM program_kerja";
+            $result = $mysqli->query($query);
+        
+            if ($result && $result->num_rows > 0) {
+                return $result->fetch_all(MYSQLI_ASSOC);
+            } else {
+                return [];
+            }
     }
 
     public function fetchOneProgramKerja(int $nomorProgram)
     {
-        // implementasi fetch one row by nomor proker with select
+        global $mysqli;
+        $stmt = $mysqli->prepare("SELECT * FROM program_kerja WHERE nomor = ?");
+        $stmt->bind_param("i", $nomorProgram);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
     }
 
     public function insertProgramKerja() 
     {
-        // implementasi sql insert
+        global $mysqli;
+        $query = "INSERT INTO program_kerja (nomor, nama, surat_keterangan) 
+                  VALUES (?, ?, ?)";
+        $stmt = $mysqli->prepare($query);
+        $stmt->bind_param("iss", $this->nomorProgram, $this->nama, $this->suratKeterangan);
+        return $stmt->execute();
     }
 
-    public function updateProgramKerja()
+    public function updateProgramKerja($nomor, $title, $suratKeterangan)
     {
-        // implementasi sql update
+        global $mysqli; 
+        $sql = "UPDATE program_kerja SET nama = ?, surat_keterangan = ? WHERE nomor = ?";
+        
+        $stmt = $mysqli->prepare($sql);
+    
+        $stmt->bind_param('ssi', $title, $suratKeterangan, $nomor);
+    
+        if ($stmt->execute()) {
+            return true; // Successful update
+        } else {
+            return false; // Failed update
+        }
     }
+    
+    
 
-    public function deleteProgramKerja()
-    {
-        // implementasi sql delete   
+    public function deleteProgramKerja($nomor)
+{
+    global $mysqli; 
+    
+    // Prepare the SQL query to delete the program based on the 'nomor'
+    $sql = "DELETE FROM program_kerja WHERE nomor = ?";
+    
+    // Prepare the statement
+    $stmt = $mysqli->prepare($sql);
+    
+    // Bind the parameter (the program number)
+    $stmt->bind_param('i', $nomor);
+    
+    // Execute the query and check if the deletion is successful
+    if ($stmt->execute()) {
+        return true; // Successful delete
+    } else {
+        return false; // Failed delete
     }
+}
+
 }
