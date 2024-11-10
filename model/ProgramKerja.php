@@ -2,7 +2,7 @@
 
 require("../config/koneksi_mysql.php");
 
-
+$controller = new ProgramKerjaController();
 if (isset($_GET['action'])) {
     switch ($_GET['action']) {
         case 'delete':
